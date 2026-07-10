@@ -128,8 +128,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
+          ASSETS_DIR="$(pwd)/../Assets/StreamingAssets/AgentCanvas"
           gh release upload ${{ github.event.release.tag_name }} \
-            ${{ github.workspace }}/Assets/StreamingAssets/AgentCanvas/cli.exe \
-            ${{ github.workspace }}/Assets/StreamingAssets/AgentCanvas/mcp.exe \
-            ${{ github.workspace }}/Assets/StreamingAssets/AgentCanvas/.env.example \
+            "$ASSETS_DIR/cli.exe" \
+            "$ASSETS_DIR/mcp.exe" \
+            "$ASSETS_DIR/.env.example" \
             --clobber
