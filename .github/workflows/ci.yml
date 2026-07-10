@@ -129,7 +129,7 @@ jobs:
         shell: bash
         run: |
           gh release upload ${{ github.event.release.tag_name }} \
-            Assets/StreamingAssets/AgentCanvas/cli.exe \
-            Assets/StreamingAssets/AgentCanvas/mcp.exe \
-            Assets/StreamingAssets/AgentCanvas/.env.example \
+            ${{ github.workspace }}/Assets/StreamingAssets/AgentCanvas/cli.exe \
+            ${{ github.workspace }}/Assets/StreamingAssets/AgentCanvas/mcp.exe \
+            ${{ github.workspace }}/Assets/StreamingAssets/AgentCanvas/.env.example \
             --clobber
