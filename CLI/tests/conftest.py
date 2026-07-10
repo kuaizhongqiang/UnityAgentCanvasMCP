@@ -7,13 +7,13 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict
+from typing import AsyncGenerator
 
 import pytest
 import pytest_asyncio
 
 from cli_core import Config, UnityClient
-from tests.mock_unity_server import MockUnityServer, config_for_mock
+from tests.mock_unity_server import MockUnityServer
 
 # Configure test logging
 logging.basicConfig(

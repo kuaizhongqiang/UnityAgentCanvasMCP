@@ -12,13 +12,11 @@ These tests validate the complete command lifecycle:
 from __future__ import annotations
 
 import asyncio
-import json
 from pathlib import Path
 
 import pytest
-import pytest_asyncio
 
-from cli_core import COMMAND_DEFINITIONS, Config, UnityClient, generate_request_id
+from cli_core import Config, UnityClient
 from dialog_logger import DialogLogger
 from tests.mock_unity_server import MockUnityServer
 

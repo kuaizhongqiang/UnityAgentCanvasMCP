@@ -26,9 +26,9 @@ import logging
 import sys
 import traceback
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from cli_core import COMMAND_DEFINITIONS, Config, UnityClient
+from cli_core import Config, UnityClient
 from embedding_client import EmbeddingClient
 
 # ── Logging ─────────────────────────────────────────────────────────────────
@@ -343,7 +343,7 @@ class AgentCanvasMCPServer:
 # ── FastMCP Integration ─────────────────────────────────────────────────────
 
 
-def create_mcp_app(config: Config) -> "FastMCP":
+def create_mcp_app(config: Config):
     """
     Create and configure a FastMCP application with all AgentCanvas tools.
 

@@ -107,12 +107,12 @@ def build_exe(
     """
     pyinstaller = find_pyinstaller()
     if pyinstaller is None:
-        print("✗ PyInstaller not found. Install with: pip install pyinstaller>=6.0")
+        print("ERR PyInstaller not found. Install with: pip install pyinstaller>=6.0")
         return False
 
     script_path = work_dir / script_name
     if not script_path.exists():
-        print(f"✗ Script not found: {script_path}")
+        print(f"ERR Script not found: {script_path}")
         return False
 
     # Build options
@@ -152,7 +152,7 @@ def build_exe(
         )
 
         if result.returncode != 0:
-            print(f"✗ Build failed for {exe_name}.exe")
+            print(f"ERR Build failed for {exe_name}.exe")
             print(result.stderr[-2000:] if result.stderr else "")
             return False
 
@@ -160,21 +160,21 @@ def build_exe(
         exe_path = output_dir / f"{exe_name}.exe"
         if exe_path.exists():
             size_mb = exe_path.stat().st_size / (1024 * 1024)
-            print(f"✓ {exe_name}.exe built successfully ({size_mb:.1f} MB)")
+            print(f"OK {exe_name}.exe built successfully ({size_mb:.1f} MB)")
             return True
         else:
-            print(f"✗ Output not found: {exe_path}")
+            print(f"ERR Output not found: {exe_path}")
             return False
 
     except subprocess.TimeoutExpired:
-        print(f"✗ Build timed out for {exe_name}.exe (300s)")
+        print(f"ERR Build timed out for {exe_name}.exe (300s)")
         return False
     except FileNotFoundError:
-        print(f"✗ PyInstaller not found at '{pyinstaller}'")
+        print(f"ERR PyInstaller not found at '{pyinstaller}'")
         print("  Install: pip install pyinstaller>=6.0")
         return False
     except Exception as e:
-        print(f"✗ Build error for {exe_name}.exe: {e}")
+        print(f"ERR Build error for {exe_name}.exe: {e}")
         return False
 
 
@@ -185,13 +185,13 @@ def copy_assets(output_dir: Path, work_dir: Path) -> None:
     env_example_dst = output_dir / ".env.example"
     if env_example_src.exists():
         shutil.copy2(env_example_src, env_example_dst)
-        print(f"✓ Copied .env.example")
+        print("OK Copied .env.example")
 
     # Create runtime directories
     (output_dir / "logs").mkdir(parents=True, exist_ok=True)
     (output_dir / "dialogs").mkdir(parents=True, exist_ok=True)
     (output_dir / "index").mkdir(parents=True, exist_ok=True)
-    print("✓ Created runtime directories (logs/, dialogs/, index/)")
+    print("OK Created runtime directories (logs/, dialogs/, index/)")
 
 
 def clean_output(output_dir: Path) -> None:
@@ -245,7 +245,7 @@ def main():
     output_dir = Path(args.output_dir).resolve()
     work_dir = HERE
 
-    print(f"AgentCanvas Build Script")
+    print("AgentCanvas Build Script")
     print(f"{'='*60}")
     print(f"Source:     {work_dir}")
     print(f"Output:     {output_dir}")
@@ -263,7 +263,7 @@ def main():
     copy_assets(output_dir, work_dir)
 
     if args.copy_only:
-        print("\n✓ Copy-only mode: assets copied, skipping PyInstaller build.")
+        print("\nOK Copy-only mode: assets copied, skipping PyInstaller build.")
         return
 
     # Build executables
@@ -296,14 +296,14 @@ def main():
     # Summary
     print(f"\n{'='*60}")
     if success:
-        print("✓ Build complete!")
+        print("OK Build complete!")
         print(f"  Output: {output_dir}")
         for exe in output_dir.glob("*.exe"):
             size_mb = exe.stat().st_size / (1024 * 1024)
             print(f"  - {exe.name} ({size_mb:.1f} MB)")
-        print(f"  - .env.example")
+        print("  - .env.example")
     else:
-        print("✗ Build completed with errors")
+        print("ERR Build completed with errors")
         sys.exit(1)
 
 

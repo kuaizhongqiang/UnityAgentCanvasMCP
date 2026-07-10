@@ -20,20 +20,12 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import click
 
-from cli_core import (
-    COMMAND_DEFINITIONS,
-    Config,
-    UnityClient,
-    handle_help,
-    list_commands,
-    pretty_json,
-)
+from cli_core import Config, UnityClient, list_commands, pretty_json
 
 # ── Setup ───────────────────────────────────────────────────────────────────
 
