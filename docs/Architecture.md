@@ -60,7 +60,7 @@ public class GlobalCLIMgr : SingletonGlobalMgr<GlobalCLIMgr>
     protected override IEnumerator DelayInit()
     {
         // 1. 读取 SystemData 中的 CLI 配置（cliEnabled, cliPort 等）
-        // 2. 启动 MCP Server 进程（mcp.exe，从 Application.streamingAssetsPath + "/CLI/"）
+        // 2. 启动 MCP Server 进程（mcp.exe，从 Application.streamingAssetsPath + "/AgentCanvas/"）
         // 3. 启动 EmbedIO
         // 4. 注册 HTTP 路由
         // 5. 注册 WebSocket 模块
@@ -81,12 +81,13 @@ SystemData 新增字段：
 ```csharp
     // HTTP 端点
     // POST /cmd — 命令入口（command + params 在 JSON body 中）
+    // GET /data/export — 数据导出端点（返回结构化数据 JSON）
     // GET /ws — WebSocket 升级
 
     // CLI 进程管理
     private void StartCLIProcess()
     {
-        // Process.Start("mcp.exe") 从 Application.streamingAssetsPath + "/CLI/"
+        // Process.Start("mcp.exe") 从 Application.streamingAssetsPath + "/AgentCanvas/"
     }
     private void StopCLIProcess()
     {

@@ -50,6 +50,42 @@ Content-Type: application/json
 }
 ```
 
+### 数据导出端点
+
+**GET** `http://localhost:3748/data/export`
+
+返回 Unity 内存中所有 DataBase 数据的 JSON 序列化结果，供 Embedding 引擎构建索引。每次调用返回当前最新数据。
+
+```json
+{
+  "version": 1,
+  "exportedAt": "2026-07-10T12:00:00Z",
+  "count": 100,
+  "items": [
+    {
+      "id": "equipment_03",
+      "displayName": "显微镜",
+      "description": "光学显微镜构造与成像原理",
+      "tag": ["显微镜", "光学", "成像"],
+      "data": {
+        "imagePath": "textures/microscope.png",
+        "modelId": "model_microscope_01"
+      },
+      "templateType": "image_text"
+    }
+  ]
+}
+```
+
+| 字段 | 来源 | 说明 |
+|:--|:--|:--|
+| `id` | DataBase.id | 唯一标识 |
+| `displayName` | DataBase.displayName | 显示名称 |
+| `description` | DataBase.description | 描述文本 |
+| `tag` | 数据编辑器配置 | 关键词标签 |
+| `data` | DataBase 子类自定义 | 子类特定字段（imagePath, modelId 等） |
+| `templateType` | 数据编辑器配置 | 建议 UI 模板类型 |
+
 ## WebSocket
 
 ### 连接
@@ -80,8 +116,9 @@ Content-Type: application/json
 ```json
 {
   "requestId": "req_789",
-  "inResponseTo": "req_456",   // 触发本次交互的 page.run 命令 requestId
+  "inResponseTo": "req_456",
   "event": "interaction",
+  "dialogId": "dialog_1",
   "pageId": "page_1",
   "elementId": "elem_3",
   "action": "submitted",
@@ -120,7 +157,11 @@ Agent 决策循环：发命令 → 收到 received → 发下一条 → ... → 
 - HTTP 请求超时：5 秒
 - 命令执行超时：30 秒（可配置 `COMMAND_TIMEOUT`）
 - 超时未收到 completed 则 MCP Server 返回超时错误
-- WebSocket 断开后 MCP Server 自动重连。重连后 MCP Server 主动发 `result.get` 拉取断连期间未回执的命令结果。Unity 侧对已完成的 requestId 进行幂等去重（保留最近 100 条），确保不重复执行
+- WebSocket 断开后 MCP Server 自动重连。重连后 MCP Server 调用 `status.list {dialogId}` 查询所有请求状态：
+  - `completed` → 直接返回结果给 Agent
+  - `failed` → 返回错误
+  - `pending` → 继续等待 WS completed
+- Unity 侧对所有 requestId 进行幂等去重（保留最近 100 条，覆盖 pending/completed/failed 全部状态），确保不重复执行
 
 ### requestId 格式
 

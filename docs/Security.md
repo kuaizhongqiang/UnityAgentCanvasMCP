@@ -30,6 +30,9 @@ LM_STUDIO_HOST=localhost
 LM_STUDIO_PORT=1234
 EMBEDDING_MODEL=Qwen3-Embedding-0.6B
 
+# 知识文档路径
+KNOWLEDGE_PATH=./knowledge_docs/
+
 # 搜索
 TOP_N=5
 

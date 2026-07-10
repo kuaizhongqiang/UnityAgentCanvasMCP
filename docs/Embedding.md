@@ -14,6 +14,10 @@ Agent → MCP Server → Embedding 引擎（LM Studio）
          search.data 返回 Top-N ID + knowledgeOriginal
               │
          get.data 到 Unity 取精确内容
+              │
+    双数据源合并索引:
+     ┌─ Unity HTTP GET /data/export（结构化数据）
+     └─ KNOWLEDGE_PATH 目录（知识文档 .md）
 ```
 
 搜索与取数解耦：Embedding 只返回 ID，Unity 根据 ID 返回精确内容（地面真值）。
@@ -55,20 +59,45 @@ MCP Server → POST /v1/embeddings → 获取向量
 ## 索引策略
 
 方向：
-- **运行时首次构建**：MCP Server 启动时检查索引文件。若不存在，读取 Unity 导出的 `data_export.json` 逐条计算 embedding，生成索引文件并缓存
+- **运行时首次构建**：MCP Server 启动时检查索引文件。若不存在，从两个数据源拉取数据逐条计算 embedding，生成索引文件并缓存
+
+数据源一：**Unity HTTP** — `GET http://localhost:3748/data/export` 返回结构化数据（id, displayName, description, tag, templateType）
+
+数据源二：**KNOWLEDGE_PATH 目录** — 通过 `.env` 配置，存放 UTF-8 Markdown 文档，frontmatter 中 `dataId` 关联 Unity 数据
+
 - 数据量 < 1000 条时首次构建耗时 < 5 秒（Qwen3-0.6B），后续启动直接加载缓存
 
-> 索引文件位于 `StreamingAssets/AgentCanvas/index/`，与 `data_export.json` 同目录。
+> 索引文件位于 `StreamingAssets/AgentCanvas/index/`。
 
 ## 数据准备
 
-需要参与 embedding 的数据：
+### 数据源一：Unity 结构化数据
 
-1. 所有 DataBase 子类的 `id + displayName + description`
-2. 每个数据关联的 `knowledgeOriginal` 原文
-3. `tag` 标签数组
+Unity `GET /data/export` 返回所有 DataBase 子类数据，MCP Server 取：
+1. `id + displayName + description`
+2. `tag` 标签数组
+3. `templateType`（从数据编辑器配置获取）
 
-索引构建时拼接为单个文本进行 embedding：
+### 数据源二：KNOWLEDGE_PATH 知识文档
+
+通过 `.env` 配置 `KNOWLEDGE_PATH=./knowledge_docs/`，目录下存放 UTF-8 Markdown 文件：
+
+```markdown
+---
+dataId: equipment_03
+displayName: 显微镜
+tag: [显微镜, 光学, 成像]
+---
+
+显微镜由目镜、物镜、载物台、聚光镜和光源组成。
+光线经过聚光镜照射标本，通过物镜放大成像...
+```
+
+frontmatter 中 `dataId` 关联 Unity 数据。正文为 `knowledgeOriginal`。
+
+### 索引文本拼接
+
+两条数据源合并后，每条拼为：
 
 ```
 "{id} {displayName} {description} {tags} {knowledgeOriginal}"
