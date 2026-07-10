@@ -1,3 +1,7 @@
+# AgentCanvas runtime data
+CLI/logs/
+CLI/dialogs/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

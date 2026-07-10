@@ -31,6 +31,8 @@ import httpx
 import numpy as np
 
 from cli_core import Config
+from knowledge_reader import KnowledgeDoc, KnowledgeReader
+from knowledge_reader import KnowledgeDoc, KnowledgeReader
 
 logger = logging.getLogger("agentcanvas.embedding")
 
@@ -90,12 +92,15 @@ class EmbeddingClient:
     - Graceful fallback to keyword matching when LM Studio is unavailable
     """
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, knowledge_reader: Optional[KnowledgeReader] = None):
         self.config = config
         self._http_client: Optional[httpx.AsyncClient] = None
         self._index: List[IndexEntry] = []
         self._embeddings_matrix: Optional[np.ndarray] = None
         self._ready = False
+        self._knowledge_reader = knowledge_reader or (
+            KnowledgeReader(config.knowledge_path) if config.knowledge_path else None
+        )
 
     # ── HTTP ──
 
@@ -195,6 +200,18 @@ class EmbeddingClient:
             entries.append(entry)
         return entries
 
+    def _knowledge_to_entry(self, doc: KnowledgeDoc) -> IndexEntry:
+        """Convert a KnowledgeDoc to an IndexEntry for the embedding index."""
+        return IndexEntry(
+            id=doc.id,
+            display_name=doc.title,
+            description=doc.description,
+            tags=doc.tags,
+            knowledge_original=doc.content,
+            data={"source": doc.source_path},
+            template_type="knowledge",
+        )
+
     async def build_index(self, force: bool = False) -> bool:
         """
         Build or load the embedding index.
@@ -218,15 +235,30 @@ class EmbeddingClient:
             except Exception as e:
                 logger.warning("Failed to load cached index: %s", e)
 
-        # Load data export
+        # Load data export (Unity)
         export = self._load_data_export()
-        if not export:
-            logger.warning("No data export found — keyword fallback only")
+        self._index = self._entries_from_export(export) if export else []
+        if export:
+            logger.info("Loaded %d entries from Unity data export", len(export))
+        else:
+            logger.warning("No Unity data export found at %s", self._data_export_path())
+
+        # Load knowledge docs (markdown files)
+        if self._knowledge_reader:
+            try:
+                knowledge_docs = self._knowledge_reader.read_all()
+                for doc in knowledge_docs:
+                    # Avoid duplicate IDs — knowledge docs take precedence
+                    self._index = [e for e in self._index if e.id != doc.id]
+                    self._index.append(self._knowledge_to_entry(doc))
+                logger.info("Loaded %d entries from knowledge docs", len(knowledge_docs))
+            except Exception as e:
+                logger.warning("Failed to load knowledge docs: %s", e)
+
+        if not self._index:
+            logger.warning("No index entries loaded — keyword fallback only")
             self._ready = False
             return False
-
-        self._index = self._entries_from_export(export)
-        logger.info("Loaded %d entries from data export", len(self._index))
 
         # Try LM Studio for embeddings
         lm_available = await self._check_lm_studio()

@@ -24,6 +24,8 @@ import httpx
 import websockets.client as ws_client
 from dotenv import load_dotenv
 
+from dialog_logger import DialogLogger
+
 # ── Logger ──────────────────────────────────────────────────────────────────
 
 logger = logging.getLogger("agentcanvas.cli_core")
@@ -53,6 +55,12 @@ class Config:
 
     # Logging
     log_level: str = "INFO"
+
+    # Dialog
+    dialog_id: str = "default"
+
+    # Knowledge docs
+    knowledge_path: str = ""
 
     # Paths
     persistent_data_path: str = ""
@@ -274,6 +282,13 @@ class UnityClient:
         self._pending: Dict[str, asyncio.Future] = {}
         self._ws_connected = asyncio.Event()
         self._stop_event = asyncio.Event()
+        self.dialog_logger: Optional[DialogLogger] = None
+
+        # WS reconnect
+        self._reconnect_task: Optional[asyncio.Task] = None
+        self._should_reconnect = True
+        self._reconnect_delay = 2.0
+        self._reconnect_max_delay = 30.0
 
     # ── HTTP ──
 
@@ -305,39 +320,58 @@ class UnityClient:
         }
 
         logger.debug("HTTP → %s | req=%s | command=%s", url, request_id, command)
+
+        # Log send (dialog logger)
+        if self.dialog_logger:
+            self.dialog_logger.log_send(request_id, command, params)
+
         try:
             response = await client.post(url, json=payload)
             response.raise_for_status()
             data = response.json()
             logger.debug("HTTP ← %s | req=%s | status=%s", url, request_id, data.get("status"))
+
+            # Log recv (dialog logger)
+            if self.dialog_logger:
+                self.dialog_logger.log_recv(request_id, data)
+
             return data
         except httpx.TimeoutException:
             logger.warning("HTTP timeout | req=%s | command=%s", request_id, command)
-            return {
+            err = {
                 "requestId": request_id,
                 "status": "error",
                 "code": 408,
                 "message": f"HTTP request timed out after {self.config.http_timeout}s",
             }
+            if self.dialog_logger:
+                self.dialog_logger.log_recv(request_id, err)
+            return err
         except httpx.HTTPStatusError as e:
             logger.error("HTTP error | req=%s | status=%d", request_id, e.response.status_code)
             try:
-                return e.response.json()
+                err = e.response.json()
             except Exception:
-                return {
+                err = {
                     "requestId": request_id,
                     "status": "error",
                     "code": e.response.status_code,
                     "message": e.response.text,
                 }
+            if self.dialog_logger:
+                self.dialog_logger.log_recv(request_id, err)
+            return err
         except httpx.RequestError as e:
             logger.error("HTTP request failed | req=%s | %s", request_id, str(e))
-            return {
+            err = {
                 "requestId": request_id,
                 "status": "error",
                 "code": 503,
                 "message": f"Connection failed: {e}",
             }
+            if self.dialog_logger:
+                self.dialog_logger.log_recv(request_id, err)
+            return err
 
     # ── WebSocket ──
 
@@ -383,16 +417,37 @@ class UnityClient:
                         if not future.done():
                             future.set_result(data)
 
+                    # Log receipt (dialog logger)
+                    if self.dialog_logger and event in ("completed", "error"):
+                        self.dialog_logger.log_receipt(req_id, data)
+
+                    # Log interaction callbacks
+                    if self.dialog_logger and data.get("event") == "interaction":
+                        self.dialog_logger.log_interaction(
+                            request_id=req_id,
+                            page_id=data.get("pageId", ""),
+                            element_id=data.get("elementId", ""),
+                            action=data.get("action", ""),
+                            data=data.get("data"),
+                        )
+
                     # Log system events
                     if event in ("page.rendered", "page.error", "dialog.timeout", "system.error"):
                         logger.info("WS system event | event=%s | data=%s", event, data.get("data"))
+                        if self.dialog_logger:
+                            self.dialog_logger.log_system_event(event, data.get("data"))
 
                 except json.JSONDecodeError:
                     logger.warning("WS received malformed JSON: %s", message[:200])
         except Exception as e:
             logger.warning("WS listener stopped: %s", e)
         finally:
+            self._ws = None
             self._ws_connected.clear()
+            # Auto-reconnect if enabled
+            if self._should_reconnect:
+                logger.info("WS disconnected — starting reconnection loop")
+                self._reconnect_task = asyncio.create_task(self._reconnect_loop())
 
     async def wait_for_receipt(
         self, request_id: str, timeout: Optional[float] = None
@@ -430,6 +485,49 @@ class UnityClient:
                 "message": f"Command timed out after {timeout}s (no receipt)",
             }
 
+    # ── WS Reconnect ──
+
+    async def _reconnect_loop(self) -> None:
+        """Background task that reconnects WS with exponential backoff."""
+        delay = self._reconnect_delay
+        attempt = 0
+        while self._should_reconnect and not self._stop_event.is_set():
+            attempt += 1
+            logger.info("WS reconnect attempt %d in %.1fs", attempt, delay)
+            await asyncio.sleep(delay)
+
+            try:
+                ws_url = (
+                    f"ws://localhost:{self.config.cli_port}/ws"
+                    f"?token={self.config.cli_token}"
+                )
+                self._ws = await ws_client.connect(ws_url, ping_interval=30)
+                self._ws_connected.set()
+                logger.info("WS reconnected (attempt %d)", attempt)
+                asyncio.create_task(self._ws_listen())
+                return
+            except Exception as e:
+                logger.warning("WS reconnect attempt %d failed: %s", attempt, e)
+                delay = min(delay * 1.5, self._reconnect_max_delay)
+
+        logger.warning("WS reconnect loop ended")
+
+    def disable_reconnect(self) -> None:
+        """Disable auto-reconnect (e.g., during shutdown)."""
+        self._should_reconnect = False
+
+    # ── Dialog Management ──
+
+    def set_dialog(self, dialog_id: str) -> DialogLogger:
+        """Set or change the current dialog ID and initialize its logger."""
+        if self.dialog_logger:
+            self.dialog_logger.close()
+        self.dialog_logger = DialogLogger(
+            dialog_id=dialog_id,
+            streaming_assets_path=self.config.streaming_assets_path,
+        )
+        return self.dialog_logger
+
     # ── High-level execute ──
 
     async def execute(
@@ -446,6 +544,10 @@ class UnityClient:
         if params is None:
             params = {}
         request_id = generate_request_id()
+
+        # Auto-init dialog logger from config
+        if self.dialog_logger is None:
+            self.set_dialog(self.config.dialog_id)
 
         # Validate command
         if command not in COMMAND_DEFINITIONS:
@@ -482,7 +584,13 @@ class UnityClient:
     # ── Lifecycle ──
 
     async def close(self) -> None:
-        """Clean up HTTP client and WebSocket connection."""
+        """Clean up HTTP client, WebSocket connection, and dialog logger."""
+        self.disable_reconnect()
+        if self._reconnect_task and not self._reconnect_task.done():
+            self._reconnect_task.cancel()
+        if self.dialog_logger:
+            self.dialog_logger.close()
+            self.dialog_logger = None
         if self._http_client and not self._http_client.is_closed:
             await self._http_client.aclose()
         if self._ws:
