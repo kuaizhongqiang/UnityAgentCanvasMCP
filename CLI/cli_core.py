@@ -157,18 +157,26 @@ COMMAND_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "params": {},
     },
     # ── Page operations ──
+    "status.list": {
+        "description": "Query command status by dialogId (for WS reconnect recovery).",
+        "params": {"dialogId": {"type": "string", "required": False}},
+    },
     "page.create": {
         "description": "Create a new blank page.",
-        "params": {"pageId": {"type": "string", "required": True}},
+        "params": {
+            "pageId": {"type": "string", "required": True},
+            "dialogId": {"type": "string", "required": False},
+        },
     },
     "page.list": {
         "description": "List all pages and their status.",
-        "params": {},
+        "params": {"dialogId": {"type": "string", "required": False}},
     },
     "run": {
         "description": "Execute/render an existing page in Unity.",
         "params": {
             "pageId": {"type": "string", "required": True},
+            "dialogId": {"type": "string", "required": False},
             "filePath": {"type": "string", "required": False},
         },
     },
@@ -176,6 +184,7 @@ COMMAND_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "description": "Incrementally update a page (JSON Merge Patch).",
         "params": {
             "pageId": {"type": "string", "required": True},
+            "dialogId": {"type": "string", "required": False},
             "patch": {"type": "object", "required": True},
         },
     },
@@ -183,6 +192,7 @@ COMMAND_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "description": "Clear page content, optionally scoped.",
         "params": {
             "pageId": {"type": "string", "required": True},
+            "dialogId": {"type": "string", "required": False},
             "scope": {"type": "string", "required": False},
         },
     },
@@ -190,13 +200,17 @@ COMMAND_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "description": "Show quiz result feedback on a specific element.",
         "params": {
             "pageId": {"type": "string", "required": True},
+            "dialogId": {"type": "string", "required": False},
             "elementId": {"type": "string", "required": True},
             "result": {"type": "object", "required": True},
         },
     },
     "page.delete": {
         "description": "Delete a page and its configuration.",
-        "params": {"pageId": {"type": "string", "required": True}},
+        "params": {
+            "pageId": {"type": "string", "required": True},
+            "dialogId": {"type": "string", "required": False},
+        },
     },
     "stop": {
         "description": "Stop the currently executing task.",
@@ -247,6 +261,7 @@ def list_commands() -> str:
             "result.show",
             "page.delete",
             "stop",
+            "status.list",
         ],
         "Queue": ["queue", "queue.push"],
         "Config": ["init", "restart"],

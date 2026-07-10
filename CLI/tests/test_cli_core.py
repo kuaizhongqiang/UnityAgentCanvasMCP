@@ -113,6 +113,7 @@ class TestCommandDefinitions:
             "result.show",
             "page.delete",
             "stop",
+            "status.list",
             "queue",
             "queue.push",
             "init",

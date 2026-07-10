@@ -55,6 +55,7 @@ class DialogLogger:
     ):
         self.dialog_id = dialog_id
         self._start_time = time.time()
+        self._started_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         self._command_count = 0
         self._error_count = 0
         self._active_commands: Dict[str, float] = {}
@@ -216,7 +217,7 @@ class DialogLogger:
         elapsed = time.time() - self._start_time
         summary = {
             "dialogId": self.dialog_id,
-            "startedAt": self._timestamp(),
+            "startedAt": self._started_at,
             "elapsed_seconds": round(elapsed, 1),
             "commandCount": self._command_count,
             "errorCount": self._error_count,

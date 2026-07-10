@@ -276,6 +276,20 @@ async def cmd_usage(ctx):
 # ── Page Operations ──
 
 
+@cli.command("status_list")
+@click.argument("dialog_id", required=False)
+@async_cmd
+async def cmd_status_list(ctx, dialog_id: Optional[str] = None):
+    """Query command status by dialogId (for WS reconnect recovery)."""
+    state = ctx.obj
+    client = await state.get_client()
+    params = {}
+    if dialog_id:
+        params["dialogId"] = dialog_id
+    result = await client.execute("status.list", params)
+    print_result(result, "status.list")
+
+
 @cli.command("page_create")
 @click.argument("page_id")
 @async_cmd
