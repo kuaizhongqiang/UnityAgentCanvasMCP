@@ -34,8 +34,8 @@ Agent ← MCP (stdio) → MCP Server ← HTTP/WS (3748) → Unity (EmbedIO)
 
 ## 路径
 
-- 源码：`./CLI/`（和 Assets 同级）
-- 构建：`CLI/ → PyInstaller → Assets/StreamingAssets/CLI/ → Unity Build 自动带走`
+- 源码：`AgentCanvas/cli/`（和 Assets 同级）
+- 构建：`CLI/ → PyInstaller → Assets/StreamingAssets/AgentCanvas/ → Unity Build 自动带走`
 - 端口：3748，Unity 侧 `GlobalCLIMgr.cs` 管理，CLI 侧 `.env`
 
 ## 文档索引

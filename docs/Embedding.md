@@ -58,7 +58,7 @@ MCP Server → POST /v1/embeddings → 获取向量
 - **运行时首次构建**：MCP Server 启动时检查索引文件。若不存在，读取 Unity 导出的 `data_export.json` 逐条计算 embedding，生成索引文件并缓存
 - 数据量 < 1000 条时首次构建耗时 < 5 秒（Qwen3-0.6B），后续启动直接加载缓存
 
-> 索引文件位于 `StreamingAssets/CLI/index/`，与 `data_export.json` 同目录。
+> 索引文件位于 `StreamingAssets/AgentCanvas/index/`，与 `data_export.json` 同目录。
 
 ## 数据准备
 

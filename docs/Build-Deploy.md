@@ -45,12 +45,12 @@ python build.py
 ```
 
 `build.py` 职责：
-1. 调用 PyInstaller 编译 `main.py` → `../Assets/StreamingAssets/CLI/cli.exe`
-2. 调用 PyInstaller 编译 `mcp_server.py` → `../Assets/StreamingAssets/CLI/mcp.exe`
+1. 调用 PyInstaller 编译 `main.py` → `../Assets/StreamingAssets/AgentCanvas/cli.exe`
+2. 调用 PyInstaller 编译 `mcp_server.py` → `../Assets/StreamingAssets/AgentCanvas/mcp.exe`
 3. 复制 `.env.example` 到输出目录
 4. 调用 Unity 导出脚本生成 `data_export.json` → 复制到输出目录（供 Embedding 构建索引）
 
-构建产物及运行时目录 `Assets/StreamingAssets/CLI/`：
+构建产物及运行时目录 `Assets/StreamingAssets/AgentCanvas/`：
 ```
 cli.exe                   # 命令行工具
 mcp.exe                   # MCP Server
@@ -63,7 +63,7 @@ data_export.json          # Unity 导出数据索引
 
 ## Unity 构建
 
-Unity Build 自动将 `Assets/StreamingAssets/CLI/` 打包到 `{ProjectName}_Data/StreamingAssets/CLI/`。
+Unity Build 自动将 `Assets/StreamingAssets/AgentCanvas/` 打包到 `{ProjectName}_Data/StreamingAssets/AgentCanvas/`。
 
 构建后目录：
 ```

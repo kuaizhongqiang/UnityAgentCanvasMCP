@@ -13,7 +13,7 @@
 
 ## 日志输出
 
-- **Python 侧**：stdout（开发）+ 文件（生产）。开发时 `./CLI/logs/`，构建后 `StreamingAssets/CLI/logs/`。通过 `LOG_LEVEL` 和 `LOG_FILE` 配置
+- **Python 侧**：stdout（开发）+ 文件（生产）。开发时 `./AgentCanvas/logs/`，构建后 `StreamingAssets/AgentCanvas/logs/`。通过 `LOG_LEVEL` 和 `LOG_FILE` 配置
 - **Unity 侧**：`Debug.Log` + 可选文件输出
 
 ## 关键日志点
@@ -51,6 +51,6 @@ wscat -c ws://localhost:3748/ws?token=xxx
 |:--|:--|
 | 端口被占用 | 检查是否有残留 CLI/Unity 进程，`netstat -ano \| findstr 3748` |
 | 鉴权失败 401 | 检查 `.env` 中 `CLI_TOKEN` 与 Unity Inspector 中 token 是否一致 |
-| MCP Server 启动失败 | 检查 `StreamingAssets/CLI/mcp.exe` 是否存在，Python 环境是否正确 |
+| MCP Server 启动失败 | 检查 `StreamingAssets/AgentCanvas/mcp.exe` 是否存在，Python 环境是否正确 |
 | search.data 返回空 | 检查 LM Studio 是否启动、模型是否加载、数据是否已构建索引 |
 | WS 频繁断开 | 检查防火墙设置、网络稳定性、命令执行是否超时 |
