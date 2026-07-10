@@ -32,7 +32,6 @@ import numpy as np
 
 from cli_core import Config
 from knowledge_reader import KnowledgeDoc, KnowledgeReader
-from knowledge_reader import KnowledgeDoc, KnowledgeReader
 
 logger = logging.getLogger("agentcanvas.embedding")
 
@@ -97,6 +96,7 @@ class EmbeddingClient:
         self._http_client: Optional[httpx.AsyncClient] = None
         self._index: List[IndexEntry] = []
         self._embeddings_matrix: Optional[np.ndarray] = None
+        self._embedding_map: List[int] = []  # matrix index → _index index
         self._ready = False
         self._knowledge_reader = knowledge_reader or (
             KnowledgeReader(config.knowledge_path) if config.knowledge_path else None
@@ -178,10 +178,9 @@ class EmbeddingClient:
             return []
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        return data
         if isinstance(data, list):
             return data
-        # May be wrapped in an object
+        # May be wrapped in an object with "items" or "data" key
         return data.get("items", data.get("data", []))
 
     def _entries_from_export(self, export: List[Dict[str, Any]]) -> List[IndexEntry]:
@@ -289,11 +288,13 @@ class EmbeddingClient:
         return lm_available
 
     def _build_embeddings_matrix(self) -> None:
-        """Build numpy matrix from entry embeddings for fast similarity."""
-        vectors = []
-        for entry in self._index:
+        """Build numpy matrix + index map from entry embeddings."""
+        vectors: List[np.ndarray] = []
+        self._embedding_map = []
+        for i, entry in enumerate(self._index):
             if entry.embedding is not None:
                 vectors.append(entry.embedding)
+                self._embedding_map.append(i)
         if vectors:
             self._embeddings_matrix = np.stack(vectors)
         else:
@@ -411,8 +412,9 @@ class EmbeddingClient:
                 top_indices = np.argsort(scores)[::-1][:top_n]
 
                 results = []
-                for idx in top_indices:
-                    entry = self._index[idx]
+                for matrix_idx in top_indices:
+                    real_idx = self._embedding_map[matrix_idx]
+                    entry = self._index[real_idx]
                     results.append(
                         SearchResult(
                             id=entry.id,
@@ -420,7 +422,7 @@ class EmbeddingClient:
                             tag=entry.tags,
                             data=entry.data,
                             knowledge_original=entry.knowledge_original,
-                            score=float(scores[idx]),
+                            score=float(scores[matrix_idx]),
                             template_type=entry.template_type,
                         )
                     )

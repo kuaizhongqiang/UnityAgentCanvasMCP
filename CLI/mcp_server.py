@@ -188,6 +188,11 @@ class AgentCanvasMCPServer:
 
     # ── Page Operations ──
 
+    async def tool_status_list(self, dialog_id: str = "") -> str:
+        """Query command status by dialogId (for WS reconnect recovery)."""
+        result = await self._exec("status.list", {"dialogId": dialog_id})
+        return json.dumps(result, ensure_ascii=False, indent=2)
+
     async def tool_page_create(self, page_id: str) -> str:
         """Create a new blank page."""
         result = await self._exec("page.create", {"pageId": page_id})
@@ -240,17 +245,17 @@ class AgentCanvasMCPServer:
         self,
         page_id: str,
         element_id: str,
-        result_json: str,
+        result: str,
     ) -> str:
         """Show quiz result feedback on a specific element.
 
         Args:
             page_id: The page containing the element
             element_id: The element to show result on
-            result_json: JSON object with result data (isCorrect, correctAnswer, etc.)
+            result: JSON object with result data (isCorrect, correctAnswer, etc.)
         """
         try:
-            result_obj = json.loads(result_json)
+            result_obj = json.loads(result)
         except json.JSONDecodeError as e:
             return json.dumps(
                 {"status": "error", "code": 400, "message": f"Invalid JSON result: {e}"},
@@ -283,15 +288,15 @@ class AgentCanvasMCPServer:
         result = await self._exec("queue")
         return json.dumps(result, ensure_ascii=False, indent=2)
 
-    async def tool_queue_push(self, commands_json: str) -> str:
+    async def tool_queue_push(self, commands: str) -> str:
         """Submit batch commands for sequential execution.
 
         Args:
-            commands_json: JSON array of command objects, e.g.
+            commands: JSON array of command objects, e.g.
                 [{"command": "page.create", "params": {"pageId": "page_1"}}]
         """
         try:
-            cmds = json.loads(commands_json)
+            cmds = json.loads(commands)
         except json.JSONDecodeError as e:
             return json.dumps(
                 {"status": "error", "code": 400, "message": f"Invalid JSON: {e}"},
@@ -299,7 +304,7 @@ class AgentCanvasMCPServer:
             )
         if not isinstance(cmds, list):
             return json.dumps(
-                {"status": "error", "code": 400, "message": "commands_json must be a JSON array"},
+                {"status": "error", "code": 400, "message": "commands must be a JSON array"},
                 ensure_ascii=False,
             )
         result = await self._exec("queue.push", {"commands": cmds})
@@ -312,15 +317,15 @@ class AgentCanvasMCPServer:
 
     # ── Config ──
 
-    async def tool_init(self, config_json: str) -> str:
+    async def tool_init(self, config: str) -> str:
         """Persist agent configuration.
 
         Args:
-            config_json: JSON object with agent config
+            config: JSON object with agent config
                 (name, role, preferences, etc.)
         """
         try:
-            config_obj = json.loads(config_json)
+            config_obj = json.loads(config)
         except json.JSONDecodeError as e:
             return json.dumps(
                 {"status": "error", "code": 400, "message": f"Invalid JSON config: {e}"},
@@ -445,6 +450,13 @@ def create_mcp_app(config: Config) -> "FastMCP":
         return await server.tool_usage()
 
     # Page Operations
+    @app.tool(
+        name="status_list",
+        description="Query command status by dialogId (for WS reconnect recovery).",
+    )
+    async def status_list_tool(dialogId: str = "") -> str:
+        return await server.tool_status_list(dialogId)
+
     @app.tool(
         name="page_create",
         description="Create a new blank page.",
