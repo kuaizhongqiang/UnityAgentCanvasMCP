@@ -75,6 +75,9 @@ class AgentCanvasMCPServer:
         self.unity = UnityClient(self.config)
         await self.unity.connect_ws()
 
+        # Initialize dialog logging
+        self.unity.set_dialog(self.config.dialog_id)
+
         # Embedding client
         self.embedding = EmbeddingClient(self.config)
         await self.embedding.build_index()
