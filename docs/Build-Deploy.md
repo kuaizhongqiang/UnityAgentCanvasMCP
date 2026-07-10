@@ -11,7 +11,7 @@
 │   │   └── GlobalManager/
 │   │       └── GlobalCLIMgr.cs      ← Unity 侧（新增）
 │   ├── StreamingAssets/
-│   │   └── CLI/                     ← PyInstaller 构建输出目标
+│   │   └── AgentCanvas/              ← PyInstaller 构建输出目标
 │   └── Documents/
 │       └── AgentCanvas/                 ← 本文档目录
 ├── CLI/                             ← Python 源码
@@ -48,7 +48,6 @@ python build.py
 1. 调用 PyInstaller 编译 `main.py` → `../Assets/StreamingAssets/AgentCanvas/cli.exe`
 2. 调用 PyInstaller 编译 `mcp_server.py` → `../Assets/StreamingAssets/AgentCanvas/mcp.exe`
 3. 复制 `.env.example` 到输出目录
-4. 调用 Unity 导出脚本生成 `data_export.json` → 复制到输出目录（供 Embedding 构建索引）
 
 构建产物及运行时目录 `Assets/StreamingAssets/AgentCanvas/`：
 ```
@@ -58,7 +57,6 @@ mcp.exe                   # MCP Server
 config.json               # init 持久化配置（运行时写入 persistentDataPath，非 StreamingAssets）
 logs/                     # 全量收发日志 (dialog_{id}.jsonl)
 dialogs/                  # dialog 摘要 (dialog_{id}.json)
-data_export.json          # Unity 导出数据索引
 ```
 
 ## Unity 构建
@@ -71,7 +69,7 @@ Build/
 ├── MCV_Module.exe
 └── MCV_Module_Data/
     └── StreamingAssets/
-        └── CLI/
+        └── AgentCanvas/
             ├── cli.exe
             ├── mcp.exe
             └── .env.example

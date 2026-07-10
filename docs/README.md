@@ -34,7 +34,7 @@ Agent ← MCP (stdio) → MCP Server ← HTTP/WS (3748) → Unity (EmbedIO)
 
 ## 路径
 
-- 源码：`AgentCanvas/cli/`（和 Assets 同级）
+- 源码：`AgentCanvas/CLI/`（和 Assets 同级）
 - 构建：`CLI/ → PyInstaller → Assets/StreamingAssets/AgentCanvas/ → Unity Build 自动带走`
 - 端口：3748，Unity 侧 `GlobalCLIMgr.cs` 管理，CLI 侧 `.env`
 
@@ -43,7 +43,7 @@ Agent ← MCP (stdio) → MCP Server ← HTTP/WS (3748) → Unity (EmbedIO)
 | 文档 | 内容 |
 |:--|:--|
 | [Architecture](Architecture.md) | 组件关系、线程模型、GlobalCLIMgr、生命周期 |
-| [Commands](Commands.md) | 19 个命令（含变体共 23 个入参形式）、错误码 |
+| [Commands](Commands.md) | 20 个命令（5 类）、错误码 |
 | [UI-Templates](UI-Templates.md) | 布局/元件/交互规范、页面 JSON 结构 |
 | [Data-Model](Data-Model.md) | DataBase 改动、搜索数据格式、page 配置结构 |
 | [Protocol](Protocol.md) | HTTP API、WebSocket 事件、回执、降级 |
