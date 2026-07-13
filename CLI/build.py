@@ -38,7 +38,12 @@ from typing import List, Optional
 HERE = Path(__file__).parent.resolve()
 
 # Default output: project-root/Assets/StreamingAssets/AgentCanvas/
-DEFAULT_OUTPUT = HERE.parent / "Assets" / "StreamingAssets" / "AgentCanvas"
+# Submodule layout: MCV_Module/AgentCanvas/CLI/  → HERE.parent.parent = project root
+# Standalone layout: ProjectRoot/CLI/            → HERE.parent = project root
+_SUBMODULE_ROOT = HERE.parent.parent / "Assets"
+_STANDALONE_ROOT = HERE.parent / "Assets"
+PROJECT_ROOT = _SUBMODULE_ROOT if _SUBMODULE_ROOT.is_dir() else _STANDALONE_ROOT
+DEFAULT_OUTPUT = PROJECT_ROOT / "StreamingAssets" / "AgentCanvas"
 
 BUILD_ENTRIES = [
     {
