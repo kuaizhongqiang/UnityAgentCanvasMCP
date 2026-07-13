@@ -366,8 +366,8 @@ def create_mcp_app(config: Config):
             version="0.1.0",
         )
     except TypeError:
-        # Older FastMCP versions don't accept description parameter
-        app = FastMCP("agentcanvas", version="0.1.0")
+        # Older FastMCP versions (pre-1.28) don't accept description/version
+        app = FastMCP("agentcanvas")
 
     # ── Startup / Shutdown ──
 
