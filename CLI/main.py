@@ -96,7 +96,7 @@ def print_result(result: Dict[str, Any], command: str = "") -> None:
     code = result.get("code", 200)
 
     if status == "error":
-        click.secho(f"✗ Error [{code}]: {result.get('message', 'Unknown')}", fg="red")
+        click.secho(f"[ERR] Error [{code}]: {result.get('message', 'Unknown')}", fg="red")
         return
 
     if "data" in result:
@@ -328,7 +328,7 @@ async def cmd_update(ctx, page_id: str, patch: str):
     try:
         patch_obj = json.loads(patch)
     except json.JSONDecodeError as e:
-        click.secho(f"✗ Invalid JSON patch: {e}", fg="red")
+        click.secho(f"[ERR] Invalid JSON patch: {e}", fg="red")
         return
     result = await client.execute("update", {"pageId": page_id, "patch": patch_obj})
     print_result(result, "update")
@@ -361,7 +361,7 @@ async def cmd_result_show(ctx, page_id: str, element_id: str, result_json: str):
     try:
         result_obj = json.loads(result_json)
     except json.JSONDecodeError as e:
-        click.secho(f"✗ Invalid JSON result: {e}", fg="red")
+        click.secho(f"[ERR] Invalid JSON result: {e}", fg="red")
         return
     result = await client.execute(
         "result.show",
@@ -425,10 +425,10 @@ async def cmd_queue_push(ctx, commands_json: str):
     try:
         cmds = json.loads(commands_json)
     except json.JSONDecodeError as e:
-        click.secho(f"✗ Invalid JSON: {e}", fg="red")
+        click.secho(f"[ERR] Invalid JSON: {e}", fg="red")
         return
     if not isinstance(cmds, list):
-        click.secho("✗ commands_json must be a JSON array", fg="red")
+        click.secho("[ERR] commands_json must be a JSON array", fg="red")
         return
     result = await client.execute("queue.push", {"commands": cmds})
     print_result(result, "queue.push")
@@ -447,7 +447,7 @@ async def cmd_init(ctx, config_json: str):
     try:
         config_obj = json.loads(config_json)
     except json.JSONDecodeError as e:
-        click.secho(f"✗ Invalid JSON config: {e}", fg="red")
+        click.secho(f"[ERR] Invalid JSON config: {e}", fg="red")
         return
     result = await client.execute("init", {"config": config_obj})
     print_result(result, "init")
