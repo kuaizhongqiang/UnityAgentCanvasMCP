@@ -18,7 +18,6 @@ Environment:
     See .env.example for all options.
 """
 
-from __future__ import annotations
 
 import asyncio
 import json
@@ -378,11 +377,14 @@ def create_mcp_app(config: Config):
     server = AgentCanvasMCPServer(config)
 
     if new_api:
-        app = FastMCP(
-            "agentcanvas",
-            description="AgentCanvas MCP Server — AI Agent driving Unity UI Toolkit",
-            version="0.1.0",
-        )
+        try:
+            app = FastMCP(
+                "agentcanvas",
+                description="AgentCanvas MCP Server — AI Agent driving Unity UI Toolkit",
+                version="0.1.0",
+            )
+        except TypeError:
+            app = FastMCP("agentcanvas")
     else:
         app = FastMCP("agentcanvas")
 
@@ -592,10 +594,10 @@ async def _run_legacy(app, server):
     """Run with legacy FastMCP that doesn't support modern lifecycle."""
     await server.start()
     try:
-        app.run(transport="stdio")
+        await app.run(transport="stdio")
     except TypeError:
         # Even older: run() doesn't accept transport=
-        app.run()
+        await app.run()
     finally:
         await server.stop()
 
