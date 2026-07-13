@@ -405,7 +405,11 @@ class UnityClient:
         logger.info("WS connecting to %s", ws_url)
 
         try:
-            self._ws = await ws_client.connect(ws_url, ping_interval=30)
+            self._ws = await ws_client.connect(
+                ws_url,
+                ping_interval=30,
+                subprotocols=["agentcanvas"],
+            )
             self._ws_connected.set()
             logger.info("WS connected")
             # Start listening in background
@@ -555,7 +559,11 @@ class UnityClient:
                     f"ws://localhost:{self.config.cli_port}/ws"
                     f"?token={self.config.cli_token}"
                 )
-                self._ws = await ws_client.connect(ws_url, ping_interval=30)
+                self._ws = await ws_client.connect(
+                    ws_url,
+                    ping_interval=30,
+                    subprotocols=["agentcanvas"],
+                )
                 self._ws_connected.set()
                 logger.info("WS reconnected (attempt %d)", attempt)
                 asyncio.create_task(self._ws_listen())
