@@ -166,7 +166,7 @@ def build_exe(
         print(f"ERR Build timed out for {exe_name}.exe (300s)")
         return False
     except FileNotFoundError:
-        print(f"ERR PyInstaller not found at '{pyinstaller}'")
+        print("ERR PyInstaller not found (check: pip install pyinstaller>=6.0)")
         print("  Install: pip install pyinstaller>=6.0")
         return False
     except Exception as e:
