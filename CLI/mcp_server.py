@@ -530,8 +530,8 @@ def create_mcp_app(config: Config):
         name="result_show",
         description="Show quiz/result feedback on a specific element (e.g., correct/incorrect answer).",
     )
-    async def result_show_tool(pageId: str, elementId: str, result: str) -> str:
-        return await server.tool_result_show(pageId, elementId, result)
+    async def result_show_tool(pageId: str, elementId: str, resultJson: str) -> str:
+        return await server.tool_result_show(pageId, elementId, resultJson)
 
     @app.tool(
         name="page_delete",
