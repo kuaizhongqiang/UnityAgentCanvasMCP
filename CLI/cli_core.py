@@ -63,6 +63,7 @@ class Config:
     # Paths
     persistent_data_path: str = ""
     streaming_assets_path: str = ""
+    streaming_assets_data_path: str = ""
 
     @classmethod
     def from_env(cls, env_path: Optional[Path] = None) -> "Config":
@@ -91,6 +92,10 @@ class Config:
             ),
             streaming_assets_path=_env(
                 "STREAMING_ASSETS_PATH",
+                str(Path.cwd()),
+            ),
+            streaming_assets_data_path=_env(
+                "STREAMING_ASSETS_DATA_PATH",
                 str(Path.cwd() / "StreamingAssets" / "AgentCanvas"),
             ),
         )

@@ -165,7 +165,7 @@ class EmbeddingClient:
 
     def _data_export_path(self) -> Path:
         """Path to the Unity data export file."""
-        return Path(self.config.streaming_assets_path) / "data_export.json"
+        return Path(self.config.streaming_assets_data_path) / "data_export.json"
 
     def _load_data_export(self) -> List[Dict[str, Any]]:
         """Load exported data from Unity's data_export.json."""

@@ -51,6 +51,7 @@ def config_with_index(tmp_path: Path) -> Config:
     """Config pointing at a tmp directory for index caching."""
     return Config(
         streaming_assets_path=str(tmp_path),
+        streaming_assets_data_path=str(tmp_path),
         top_n=5,
     )
 
@@ -105,7 +106,7 @@ class TestEmbeddingClientDataLoading:
 
     def test_load_missing_file(self, tmp_path: Path):
         """Missing data_export.json should return empty list."""
-        config = Config(streaming_assets_path=str(tmp_path))
+        config = Config(streaming_assets_path=str(tmp_path), streaming_assets_data_path=str(tmp_path))
         client = EmbeddingClient(config)
         export = client._load_data_export()
         assert export == []
@@ -191,7 +192,7 @@ class TestIndexCache:
     @pytest.mark.asyncio
     async def test_cache_save_and_load(self, small_data_export: Path, tmp_path: Path):
         """Index should be saved and reloadable."""
-        config = Config(streaming_assets_path=str(tmp_path), top_n=5)
+        config = Config(streaming_assets_path=str(tmp_path), streaming_assets_data_path=str(tmp_path), top_n=5)
         client = EmbeddingClient(config)
 
         # Setup index manually (skip LM Studio)
@@ -204,7 +205,7 @@ class TestIndexCache:
         assert cache_path.exists()
 
         # Create a new client and load cache
-        config2 = Config(streaming_assets_path=str(tmp_path), top_n=5)
+        config2 = Config(streaming_assets_path=str(tmp_path), streaming_assets_data_path=str(tmp_path), top_n=5)
         client2 = EmbeddingClient(config2)
         client2._load_cached_index(cache_path)
 
@@ -215,7 +216,7 @@ class TestIndexCache:
     @pytest.mark.asyncio
     async def test_cache_with_embeddings(self, small_data_export: Path, tmp_path: Path):
         """Cache should preserve embedding vectors."""
-        config = Config(streaming_assets_path=str(tmp_path), top_n=5)
+        config = Config(streaming_assets_path=str(tmp_path), streaming_assets_data_path=str(tmp_path), top_n=5)
         client = EmbeddingClient(config)
 
         export = client._load_data_export()
