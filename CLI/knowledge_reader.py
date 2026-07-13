@@ -11,7 +11,6 @@ Supports:
 - Batch reading for index construction
 """
 
-from __future__ import annotations
 
 import logging
 import re

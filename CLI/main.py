@@ -15,7 +15,6 @@ Usage:
 Dot-notation and underscore-notation are interchangeable: `get.data` = `get_data`.
 """
 
-from __future__ import annotations
 
 import asyncio
 import json

@@ -21,7 +21,6 @@ Records full send/receive transcripts per dialog session.
   }
 """
 
-from __future__ import annotations
 
 import json
 import logging

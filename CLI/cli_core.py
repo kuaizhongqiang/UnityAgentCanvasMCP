@@ -8,7 +8,6 @@ receipt matching, and error handling for the AgentCanvas system.
 Agent ← MCP (stdio) → MCP Server (this module) ← HTTP/WS → Unity
 """
 
-from __future__ import annotations
 
 import asyncio
 import json

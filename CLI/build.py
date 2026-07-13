@@ -79,8 +79,9 @@ def find_pyinstaller() -> Optional[str]:
     except ImportError:
         pass
 
-    # Fallback: try running via python -m PyInstaller
-    return "pyinstaller"
+    # Fallback: use python -m PyInstaller which always works
+    import sys
+    return f"{sys.executable} -m PyInstaller"
 
 
 def build_exe(
@@ -105,18 +106,13 @@ def build_exe(
     Returns:
         True if build succeeded, False otherwise.
     """
-    pyinstaller = find_pyinstaller()
-    if pyinstaller is None:
-        print("ERR PyInstaller not found. Install with: pip install pyinstaller>=6.0")
-        return False
-
     script_path = work_dir / script_name
     if not script_path.exists():
         print(f"ERR Script not found: {script_path}")
         return False
 
     # Build options
-    opts = [pyinstaller]
+    opts = [sys.executable, "-m", "PyInstaller"]
 
     if not console:
         opts.append("--noconsole")
@@ -279,7 +275,7 @@ def main():
         )
         success = success and ok
     else:
-        print("\n⏭ Skipping cli.exe")
+        print("\n Skipping cli.exe")
 
     if not args.skip_mcp:
         ok = build_exe(
@@ -291,7 +287,7 @@ def main():
         )
         success = success and ok
     else:
-        print("\n⏭ Skipping mcp.exe")
+        print("\n Skipping mcp.exe")
 
     # Summary
     print(f"\n{'='*60}")

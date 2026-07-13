@@ -15,7 +15,6 @@ Search and data retrieval are decoupled: Embedding returns only IDs
 and anchor text; Unity returns ground-truth content.
 """
 
-from __future__ import annotations
 
 import json
 import logging
