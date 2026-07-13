@@ -503,6 +503,42 @@ class UnityClient:
                 "message": f"Command timed out after {timeout}s (no receipt)",
             }
 
+    # ── HTTP Polling ──
+
+    async def _poll_result(
+        self,
+        request_id: str,
+        max_retries: int = 30,
+        interval: float = 1.0,
+    ) -> Dict[str, Any]:
+        """
+        HTTP polling fallback for command result when WebSocket is unavailable.
+
+        Polls GET /result?requestId= until completed or timeout.
+        Used in Unity Editor where WS may not work (Mono HttpListener limitation).
+        """
+        for attempt in range(max_retries):
+            await asyncio.sleep(interval)
+            try:
+                client = await self._ensure_http()
+                url = f"{self.config.unity_base_url}/result?requestId={request_id}"
+                resp = await client.get(url)
+                data = resp.json()
+                if data.get("status") == "completed":
+                    logger.debug("Polling completed | req=%s | attempt=%d", request_id, attempt)
+                    return data
+                # status == "pending" → continue polling
+            except Exception as e:
+                logger.debug("Polling attempt %d failed for %s: %s", attempt, request_id, e)
+
+        logger.warning("Polling timed out | req=%s | attempts=%d", request_id, max_retries)
+        return {
+            "requestId": request_id,
+            "status": "error",
+            "code": 408,
+            "message": f"Command polling timed out after {max_retries * interval}s",
+        }
+
     # ── WS Reconnect ──
 
     async def _reconnect_loop(self) -> None:
@@ -595,9 +631,14 @@ class UnityClient:
         if not wait:
             return http_response
 
-        # Wait for WS receipt
-        receipt = await self.wait_for_receipt(request_id)
-        return receipt
+        # Wait for WS receipt (or fallback to HTTP polling)
+        if self._ws is not None:
+            receipt = await self.wait_for_receipt(request_id)
+            return receipt
+        else:
+            # WS unavailable → HTTP polling fallback
+            receipt = await self._poll_result(request_id)
+            return receipt
 
     # ── Lifecycle ──
 
