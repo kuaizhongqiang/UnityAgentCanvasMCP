@@ -359,11 +359,15 @@ def create_mcp_app(config: Config):
         sys.exit(1)
 
     server = AgentCanvasMCPServer(config)
-    app = FastMCP(
-        "agentcanvas",
-        description="AgentCanvas MCP Server — AI Agent driving Unity UI Toolkit",
-        version="0.1.0",
-    )
+    try:
+        app = FastMCP(
+            "agentcanvas",
+            description="AgentCanvas MCP Server — AI Agent driving Unity UI Toolkit",
+            version="0.1.0",
+        )
+    except TypeError:
+        # Older FastMCP versions don't accept description parameter
+        app = FastMCP("agentcanvas", version="0.1.0")
 
     # ── Startup / Shutdown ──
 
