@@ -261,7 +261,7 @@ class AgentCanvasMCPServer:
                 {"status": "error", "code": 400, "message": f"Invalid JSON result: {e}"},
                 ensure_ascii=False,
             )
-        result = await self._exec(
+        exec_result = await self._exec(
             "result.show",
             {
                 "pageId": page_id,
@@ -269,7 +269,7 @@ class AgentCanvasMCPServer:
                 "result": result_obj,
             },
         )
-        return json.dumps(result, ensure_ascii=False, indent=2)
+        return json.dumps(exec_result, ensure_ascii=False, indent=2)
 
     async def tool_page_delete(self, page_id: str) -> str:
         """Delete a page and its configuration."""
@@ -343,11 +343,27 @@ class AgentCanvasMCPServer:
 # ── FastMCP Integration ─────────────────────────────────────────────────────
 
 
+def _probe_fastmcp_api() -> bool:
+    """
+    Probe whether the installed FastMCP supports the modern API
+    (on_startup/on_shutdown decorators, transport= param in run()).
+
+    Returns True for modern API (mcp >= ~1.20), False for legacy.
+    """
+    try:
+        from mcp.server.fastmcp import FastMCP
+        probe = FastMCP("probe")
+        return callable(getattr(probe, "on_startup", None))
+    except Exception:
+        return False
+
+
 def create_mcp_app(config: Config):
     """
     Create and configure a FastMCP application with all AgentCanvas tools.
 
-    Uses the mcp[fastmcp] package for the MCP stdio transport.
+    Returns (app, server, new_api) tuple.
+    new_api=True means on_startup/on_shutdown + transport= are supported.
     """
     try:
         from mcp.server.fastmcp import FastMCP
@@ -358,26 +374,31 @@ def create_mcp_app(config: Config):
         )
         sys.exit(1)
 
+    new_api = _probe_fastmcp_api()
     server = AgentCanvasMCPServer(config)
-    try:
+
+    if new_api:
         app = FastMCP(
             "agentcanvas",
             description="AgentCanvas MCP Server — AI Agent driving Unity UI Toolkit",
             version="0.1.0",
         )
-    except TypeError:
-        # Older FastMCP versions (pre-1.28) don't accept description/version
+    else:
         app = FastMCP("agentcanvas")
 
     # ── Startup / Shutdown ──
 
-    @app.on_startup
-    async def startup():
-        await server.start()
+    if new_api:
+        @app.on_startup
+        async def startup():
+            await server.start()
 
-    @app.on_shutdown
-    async def shutdown():
-        await server.stop()
+        @app.on_shutdown
+        async def shutdown():
+            await server.stop()
+    else:
+        # Legacy FastMCP: lifecycle managed in main()
+        pass
 
     # ── Tool Registrations ──
 
@@ -561,10 +582,22 @@ def create_mcp_app(config: Config):
     async def restart_tool() -> str:
         return await server.tool_restart()
 
-    return app
+    return app, server, new_api
 
 
 # ── Main Entry Point ────────────────────────────────────────────────────────
+
+
+async def _run_legacy(app, server):
+    """Run with legacy FastMCP that doesn't support modern lifecycle."""
+    await server.start()
+    try:
+        app.run(transport="stdio")
+    except TypeError:
+        # Even older: run() doesn't accept transport=
+        app.run()
+    finally:
+        await server.stop()
 
 
 def main():
@@ -603,11 +636,15 @@ def main():
     logger.info("Starting AgentCanvas MCP Server (dev-mode=%s)", args.dev_mode)
 
     # Create and run MCP app
-    app = create_mcp_app(config)
+    app, server, new_api = create_mcp_app(config)
 
     try:
-        # FastMCP handles stdio transport automatically
-        app.run(transport="stdio")
+        if new_api:
+            # Modern FastMCP: on_startup/on_shutdown + transport= supported
+            app.run(transport="stdio")
+        else:
+            # Legacy FastMCP: manual lifecycle
+            asyncio.run(_run_legacy(app, server))
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
     except Exception as e:
