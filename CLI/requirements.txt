@@ -1,5 +1,5 @@
 pyinstaller>=6.0
-mcp>=1.28
+mcp>=1.28.1  # 1.27.1 has pydantic create_model bug
 httpx>=0.27
 websockets>=12.0
 numpy>=1.26
